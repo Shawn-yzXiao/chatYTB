@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatYTB</title>
+    <style>
+
+
+        button.clip-link {
+                margin: 5px;
+                padding: 7px;
+                background-color: #805d5d;
+                border: none;
+                color: white;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 12px;
+                border-radius: 5px;
+                cursor: pointer;
+        }
+
+        button.clip-link:hover {
+            background-color: #45a049; /* Dark Green */
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .input-group input {
+            flex: 0 0 90%;
+            padding: 10px;
+            border: 2px solid burlywood;
+            border-radius: 5px;
+        }
+
+        .icon-button {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex: 0 0 10%;
+            padding: 1px;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+
+        .icon-button img {
+            width: 30px;
+            height: 30px;
+        }
+
+
+        body {
+            font-family: Avenir, Arial, sans-serif;
+            margin: 0.2;
+            padding: 5;
+            background-color: #dfdcdc;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        #video-url-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background-color: #be8c8c;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        #video-url-form input, #video-url-form button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+        #chat-container {
+            display: none;
+            padding: 20px;
+            margin-top: 20px;
+            background-color: #fff;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        #query-form {
+            margin-top: 20px;
+        }
+        #query-form input, #query-form button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>ChatYTB: Too Long Didn't Watch? Now you can chat with a YouTube video content live.</h1>
+    
+    <form id="video-url-form">
+        <label for="video-url">Let's get started!</label>
+        <div class="input-group">
+            <input type="text" id="video-url" name="video-url" placeholder="YouTube Video URL">
+            <button type="submit" class="icon-button"><img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send">
+            </button>
+        </div>
+        <div id="loading-message"></div>
+    </form>
+    <div id="chat-container">
+        <h2>Chat with the Video contents now!</h2>
+        <div id="messages"></div>
+        <form id="query-form">
+            <label for="query">Your question:</label>
+            <div class="input-group">
+                <input type="text" id="query" name="query">
+                <button type="submit" class="icon-button"><img src="{{ url_for('static', filename='send-icon.png') }}" alt="Send">
+                </button>
+            </div>
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        var sessionId;
+        $(document).ready(function() {
+            $('#video-url-form').submit(function(e) {
+                e.preventDefault();
+                const video_url = $('#video-url').val();
+                $('#video-url').val('');
+                $('#loading-message').text('Analyzing... A 1 hour video usually takes 30s to summarize. Chat will be available after loading:)');
+                $.post('/save_transcript', { video_url: video_url }, function(response) {
+                    sessionId = response.session_id;
+                    var summary = response.summary;
+                    $('#chat-container').show();
+                    $('#loading-message').text(summary);
+                });
+            });
+            $('#query-form').submit(function(e) {
+                e.preventDefault();
+                const query = $('#query').val();
+                $('#messages').append('<div><b>You:</b> ' + query + '</div>');
+                $('#query').val('');
+                $.post('/query', { query: query, session_id: sessionId }, function(response) {   
+                    $('#messages').append('<div><b>ChatYTB:</b> ' + response.result + '</div>');
+                    for (let i = 0; i < response.clip_links.length; i++) {
+                        const clipLink = response.clip_links[i];
+                        $('#messages').append('<button class="clip-link" onclick="window.open(\'' + clipLink + '\', \'_blank\')">Clip ' + (i+1) + '</button>');
+                    }
+                }, 'json');
+            });
+
+        });
+    </script>    
+</body>
+<p>Let me know your opinion! Contact <a href="https://shawn-yzxiao.github.io" target="_blank">Shawn Xiao</a> at shawncloudy@gmail.com </p>
+</html>
+
